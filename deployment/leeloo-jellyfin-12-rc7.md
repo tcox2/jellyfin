@@ -72,6 +72,36 @@ startup/verification succeeded. No Zorg or Panama encode services are changed.
   reports season 90. Do not claim the UUID/NFO import issue is fixed by this upgrade.
   No media was deleted or renamed to work around it.
 
+### Follow-up local artwork and catalog repair
+
+Panama now serves stored PostgreSQL artwork over HTTPS port 3344. All 22 House
+episode NFOs and tvshow.nfo were regenerated with Panama-only image URLs, with
+hidden backups alongside them. Jellyfin's isolated House refresh fetched those
+images successfully; external metadata/image fetchers remain disabled.
+
+Broad queued refreshes delayed the earlier NFO repair. After isolating House's
+refresh, canonical numbering was corrected but stale LocalAlternateVersions,
+OwnerId and PrimaryVersionId records continued hiding different episodes as
+versions of Paternity. The API split operation did not clear all persisted state.
+`repair-panama-house-alternates.sql` clears only those links, guarded by the
+presence of 22 distinct canonical season-1 episode numbers and foreign-key checks.
+It does not delete media, user data, episode rows or external-library entries.
+
+The stopped, real catalog was backed up and quick_check returned ok at
+`/home/t/.local/state/jellyfin-upgrades/20260905-house-alternates/jellyfin.db`.
+The actual database is under `data/data/jellyfin.db`, not the empty top-level
+placeholder. The upgrade copied the entire data tree, including the real database;
+the script's explicit comparison target has now been corrected to the real file.
+
+The guarded repair temporarily restored 22 visible episodes. A subsequent fresh
+scan recreated incorrect alternate links, so this is **not a durable fix** for
+RC7's UUID-path inference. Do not repeatedly run the SQL as routine maintenance.
+The user has been asked whether to use file-UUID subdirectories or investigate a
+Jellyfin code fix. Videos remain unchanged. Artwork verification confirmed the
+three show images and 12 visible episode stills match canonical PostgreSQL hashes;
+the 10 hidden alternatives inherit Paternity's image because of the grouping bug.
+The unsupported legacy landscape image was removed through Jellyfin's image API.
+
 ## Rollback
 
 Stop the Jellyfin service and refresh timer first. Retain the failed/new runtime,

@@ -14,7 +14,7 @@ version=$("$stage/jellyfin" --version 2>&1 || true)
 [[ $version == 'Jellyfin.Server 12.0.0.0' ]] || { echo "Unexpected staged version: $version" >&2; exit 1; }
 test -s "$stage/jellyfin-web/index.html"
 test -d "$live"
-test -f "$data/jellyfin.db"
+test -s "$data/data/jellyfin.db"
 mkdir -p "$backup"
 timer_active=false
 if systemctl --user is-active --quiet zorg-encode-jellyfin-refresh.timer; then timer_active=true; fi
@@ -27,7 +27,7 @@ cp -a --reflink=auto "$data" "$backup/data"
 cp -a --reflink=auto "$config" "$backup/config"
 cp -a /home/t/bin/jellyfin-from-source "$backup/launcher"
 cp -a /home/t/.config/systemd/user/jellyfin-source.service "$backup/service"
-cmp "$data/jellyfin.db" "$backup/data/jellyfin.db"
+cmp "$data/data/jellyfin.db" "$backup/data/data/jellyfin.db"
 sync
 echo 'Database copy verified; switching server and web runtime.'
 mv "$live" "$backup/runtime"
